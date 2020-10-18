@@ -1,3 +1,8 @@
+/*
+ * Change log:
+ * 18.10.20 added MPC controller
+ */
+
 #define DEBUG_MODULE "CONTROLLER"
 #include "debug.h"
 
@@ -6,6 +11,7 @@
 #include "controller_pid.h"
 #include "controller_mellinger.h"
 #include "controller_indi.h"
+#include "controller_mpc.h"
 
 #define DEFAULT_CONTROLLER ControllerTypePID
 static ControllerType currentController = ControllerTypeAny;
@@ -24,6 +30,7 @@ static ControllerFcns controllerFunctions[] = {
   {.init = controllerPidInit, .test = controllerPidTest, .update = controllerPid, .name = "PID"},
   {.init = controllerMellingerInit, .test = controllerMellingerTest, .update = controllerMellinger, .name = "Mellinger"},
   {.init = controllerINDIInit, .test = controllerINDITest, .update = controllerINDI, .name = "INDI"},
+  {.init = controllerMPCInit, .test = controllerMPCTest, .update = controllerMPC, .name = "MPC"},
 };
 
 
