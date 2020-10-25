@@ -28,10 +28,12 @@ static float r_pitch;
 static float r_yaw;
 static float accelz;
 
+
 void controllerPidInit(void)
 {
   attitudeControllerInit(ATTITUDE_UPDATE_DT);
   positionControllerInit();
+
 }
 
 bool controllerPidTest(void)

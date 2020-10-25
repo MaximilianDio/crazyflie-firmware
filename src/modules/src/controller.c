@@ -39,7 +39,7 @@ void controllerInit(ControllerType controller) {
     return;
   }
 
-  currentController = controller;
+  currentController = ControllerTypeMPC; //controller;
 
   if (ControllerTypeAny == currentController) {
     currentController = DEFAULT_CONTROLLER;
