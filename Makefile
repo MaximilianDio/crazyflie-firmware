@@ -19,7 +19,7 @@ CROSS_COMPILE     ?= arm-none-eabi-
 PYTHON            ?= python3
 DFU_UTIL          ?= dfu-util
 CLOAD             ?= 1
-DEBUG             ?= 0
+DEBUG             ?= 1 ## MAX 28.10
 CLOAD_SCRIPT      ?= python3 -m cfloader
 CLOAD_CMDS        ?=
 CLOAD_ARGS        ?=
@@ -176,6 +176,7 @@ PROJ_OBJ += position_estimator_altitude.o position_controller_pid.o position_con
 PROJ_OBJ += estimator.o estimator_complementary.o
 PROJ_OBJ += controller.o controller_pid.o controller_mellinger.o controller_indi.o controller_mpc.o
 PROJ_OBJ += mpc.o mpc_const.o mpc_inc.o mpc_ref.o mpc_stc.o mtx_ops.o
+PROJ_OBJ += solver.o matrix_support.o ldl.o
 PROJ_OBJ += power_distribution_$(POWER_DISTRIBUTION).o
 PROJ_OBJ += estimator_kalman.o kalman_core.o kalman_supervisor.o
 
