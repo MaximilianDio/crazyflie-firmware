@@ -39,6 +39,7 @@ void controllerInit(ControllerType controller) {
     return;
   }
 
+  // FIXME: make selectable differently
   currentController = ControllerTypeMPC; //controller;
 
   if (ControllerTypeAny == currentController) {

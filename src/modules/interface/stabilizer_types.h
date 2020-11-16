@@ -169,7 +169,7 @@ typedef struct control_s {
 typedef enum mode_e {
   modeDisable = 0,
   modeAbs,
-  modeVelocity
+  modeVelocity,
 } stab_mode_t;
 
 typedef struct setpoint_s {

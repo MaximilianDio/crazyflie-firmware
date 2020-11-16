@@ -2,8 +2,8 @@
 #include "stabilizer_types.h"
 
 #include "attitude_controller.h"
+#include "position_controller_mpc.h"
 #include "sensfusion6.h"
-#include "position_controller.h"
 #include "controller_mpc.h"
 
 #include "log.h"
@@ -11,14 +11,6 @@
 #include "math3d.h"
 
 #include "debug.h"
-
-#define USE_PID
-// define which solver to use!
-#define MUAO_MPC
-#ifdef MUAO_MPC
-// muAO-MPC
-#include "mpc.h"
-#endif
 
 #define ATTITUDE_UPDATE_DT    (float)(1.0f/ATTITUDE_RATE)
 
@@ -41,27 +33,19 @@ static float r_pitch;
 static float r_yaw;
 static float accelz;
 
-// for testing purposes
-static double u;
-
-//
-
 void controllerMPCInit(void) {
-#ifdef USE_PID
+
 	attitudeControllerInit(ATTITUDE_UPDATE_DT);
-	positionControllerInit();
-#endif
-	u = 0.0;
-	// TODO
+
+	positionControllerMPCInit();
 
 	DEBUG_PRINT("MPC initialized!\n");
 }
 
 bool controllerMPCTest(void) {
 	bool pass = true;
-#ifdef USE_PID
+
 	pass &= attitudeControllerTest();
-#endif
 
 	return pass;
 	// TODO
@@ -86,7 +70,7 @@ static float capAngle(float angle) {
 
 void controllerMPC(control_t *control, setpoint_t *setpoint,
 		const sensorData_t *sensors, const state_t *state, const uint32_t tick) {
-#ifdef USE_PID
+
 	// cascaded PID
 
 	// yaw is controlled independently!
@@ -103,7 +87,7 @@ void controllerMPC(control_t *control, setpoint_t *setpoint,
 	}
 
 	if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
-		positionController(&actuatorThrust, &attitudeDesired, setpoint, state);
+		positionControllerMPC(&actuatorThrust, &attitudeDesired, setpoint, state);
 	}
 
 	if (RATE_DO_EXECUTE(ATTITUDE_RATE, tick)) {
@@ -147,6 +131,7 @@ void controllerMPC(control_t *control, setpoint_t *setpoint,
 		attitudeControllerGetActuatorOutput(&control->roll, &control->pitch,
 				&control->yaw);
 
+		// set commands
 		control->yaw = -control->yaw;
 
 		cmd_thrust = control->thrust;
@@ -179,38 +164,9 @@ void controllerMPC(control_t *control, setpoint_t *setpoint,
 		cmd_yaw = control->yaw;
 
 		attitudeControllerResetAllPID();
-		positionControllerResetAllPID();
 
 		// Reset the calculated YAW angle for rate control
 		attitudeDesired.yaw = state->attitude.yaw;
-	}
-
-#endif
-	// TODO
-#ifdef MUAO_MPC
-	// muAO-MPC
-	if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
-		real_t x[MPC_STATES]; /* current state of the system */
-		extern struct mpc_ctl ctl; /* already defined */
-		ctl.conf->in_iter = 10; /* number of iterations */
-
-		/* The current state */
-		x[0] = state->attitude.pitch;
-		x[1] = state->attitude.roll;
-
-		for (int i = 0; i < 2; i++) {
-			consolePrintf("x[%i] = %f \n", i, (double ) x[0]);
-		}
-
-		/* Solve MPC problem and print the first element of input sequence */
-		mpc_ctl_solve_problem(&ctl, x); /* solve the MPC problem */
-
-		u = (double) ctl.u_opt[0];
-	}
-#endif
-
-	if (RATE_DO_EXECUTE(RATE_25_HZ, tick)) {
-		consolePrintf("u = %f \n", u);
 	}
 
 }
