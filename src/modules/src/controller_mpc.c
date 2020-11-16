@@ -71,8 +71,6 @@ static float capAngle(float angle) {
 void controllerMPC(control_t *control, setpoint_t *setpoint,
 		const sensorData_t *sensors, const state_t *state, const uint32_t tick) {
 
-	// cascaded PID
-
 	// yaw is controlled independently!
 	if (RATE_DO_EXECUTE(ATTITUDE_RATE, tick)) {
 		// Rate-controlled YAW is moving YAW angle setpoint
@@ -87,7 +85,8 @@ void controllerMPC(control_t *control, setpoint_t *setpoint,
 	}
 
 	if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
-		positionControllerMPC(&actuatorThrust, &attitudeDesired, setpoint, state);
+		positionControllerMPC(&actuatorThrust, &attitudeDesired, setpoint,
+				state);
 	}
 
 	if (RATE_DO_EXECUTE(ATTITUDE_RATE, tick)) {

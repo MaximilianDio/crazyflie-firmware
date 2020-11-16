@@ -191,7 +191,7 @@ void stabilizerInit(StateEstimatorType estimator)
 
   sensorsInit();
   stateEstimatorInit(estimator);
-  controllerInit(ControllerTypeAny);
+  controllerInit(ControllerTypeMPC);
   powerDistributionInit();
   sitAwInit();
   estimatorType = getStateEstimator();
@@ -286,6 +286,7 @@ static void stabilizerTask(void* param)
 
       sitAwUpdateSetpoint(&setpoint, &sensorData, &state);
 
+      // run control loop
       controller(&control, &setpoint, &sensorData, &state, tick);
 
       checkEmergencyStopTimeout();

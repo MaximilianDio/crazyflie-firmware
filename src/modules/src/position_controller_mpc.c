@@ -75,6 +75,40 @@ static struct this_s this = {
 static double u1;
 static double u2;
 
+static real_t x_ref[MPC_HOR_STATES] = { 0 };
+
+// define reference trajectory
+void createXRef(const setpoint_t *setpoint, const state_t *state) {
+	// TODO
+//	// transform to body frame
+//	float cosyaw = cosf(state->attitude.yaw * (float) M_PI / 180.0f);
+//	float sinyaw = sinf(state->attitude.yaw * (float) M_PI / 180.0f);
+	float bodyvx = setpoint->velocity.x;
+	float bodyvy = setpoint->velocity.y;
+
+	// initialize first command
+	x_ref[0] = (real_t) bodyvx;  //(bodyvx * cosyaw - bodyvy * sinyaw);
+	x_ref[1] = (real_t) state->position.x;
+	x_ref[2] = (real_t) bodyvy;  //(bodyvy * cosyaw + bodyvx * sinyaw);
+	x_ref[3] = (real_t) state->position.y;
+
+	double decraeseValue = 0.95;
+
+	for (int i = 1; i < MPC_HOR; i++) {
+		// dampen the velocity
+		x_ref[i * MPC_STATES] = (real_t) x_ref[(i - 1) * MPC_STATES]
+				* decraeseValue; // vel_x
+		x_ref[i * MPC_STATES + 2] = (real_t) x_ref[(i - 1) * MPC_STATES + 2]
+				* decraeseValue; // vel_y
+		// integrate over the velocity
+		x_ref[i * MPC_STATES + 1] = x_ref[(i - 1) * MPC_STATES + 1]
+				+ ((real_t) DT ) * x_ref[(i - 1) * MPC_STATES]; // pos_x
+		x_ref[i * MPC_STATES + 3] = x_ref[(i - 1) * MPC_STATES + 3]
+				+ ((real_t) DT ) * x_ref[(i - 1) * MPC_STATES + 2]; // pos_y
+	}
+
+}
+
 // initialize controller
 void positionControllerMPCInit() {
 	// Initialize PID for height control
@@ -105,26 +139,6 @@ void positionControllerMPC(float* thrust, attitude_t *attitude,
 	// this value is below 0.5
 	this.pidZ.pid.outputLimit = fmaxf(zVelMax, 0.5f) * velMaxOverhead;
 
-	// transform to body frame
-//	float cosyaw = cosf(state->attitude.yaw * (float) M_PI / 180.0f);
-//	float sinyaw = sinf(state->attitude.yaw * (float) M_PI / 180.0f);
-//	float bodyvx = setpoint->velocity.x;
-//	float bodyvy = setpoint->velocity.y;
-
-	// X, Y
-//	if (setpoint->mode.x == modeAbs) {
-//		setpoint->velocity.x = runPid(state->position.x, &this.pidX,
-//				setpoint->position.x, DT);
-//	} else if (setpoint->velocity_body) {
-//		setpoint->velocity.x = bodyvx * cosyaw - bodyvy * sinyaw;
-//	}
-//	if (setpoint->mode.y == modeAbs) {
-//		setpoint->velocity.y = runPid(state->position.y, &this.pidY,
-//				setpoint->position.y, DT);
-//	} else if (setpoint->velocity_body) {
-//		setpoint->velocity.y = bodyvy * cosyaw + bodyvx * sinyaw;
-//	}
-
 	if (setpoint->mode.z == modeAbs) {
 		setpoint->velocity.z = runPid(state->position.z, &this.pidZ,
 				setpoint->position.z, DT);
@@ -149,11 +163,8 @@ void velocityControllerMPC(float* thrust, attitude_t *attitude,
 	extern struct mpc_ctl ctl; /* already defined */
 	ctl.conf->in_iter = 10; /* number of iterations */
 
-	// TODO define reference trajectory
-//	real_t x_ref[48] = { 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1,
-//			0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0,
-//			1, 0, 0, 0, 1, 0, 0, };
-	real_t x_ref[MPC_HOR_STATES] = {0};
+	createXRef(setpoint, state);
+
 	ctl.x_ref = x_ref;
 
 	/* The current state */
