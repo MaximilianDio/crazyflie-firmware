@@ -127,7 +127,8 @@ endif
 
 # Crazyflie sources
 VPATH += $(CRAZYFLIE_BASE)/src/init $(CRAZYFLIE_BASE)/src/hal/src $(CRAZYFLIE_BASE)/src/utils/src $(CRAZYFLIE_BASE)/src/drivers/bosch/src $(CRAZYFLIE_BASE)/src/drivers/src $(CRAZYFLIE_BASE)/src/platform
-VPATH += $(CRAZYFLIE_BASE)/src/modules/src $(CRAZYFLIE_BASE)/src/modules/cmpc $(CRAZYFLIE_BASE)/src/modules/src/lighthouse
+VPATH += $(CRAZYFLIE_BASE)/src/modules/src $(CRAZYFLIE_BASE)/src/modules/src/lighthouse
+VPATH += $(CRAZYFLIE_BASE)/src/modules/src/osqp
 
 ############### Source files configuration ################
 
@@ -174,10 +175,10 @@ PROJ_OBJ += crtp_commander_generic.o crtp_localization_service.o peer_localizati
 PROJ_OBJ += attitude_pid_controller.o sensfusion6.o stabilizer.o
 PROJ_OBJ += position_estimator_altitude.o position_controller_pid.o position_controller_indi.o
 PROJ_OBJ += estimator.o estimator_complementary.o
-PROJ_OBJ += controller.o controller_pid.o controller_mellinger.o controller_indi.o controller_mpc.o 
-PROJ_OBJ += position_controller_mpc.o
-PROJ_OBJ += mpc.o mpc_const.o mpc_inc.o mpc_ref.o mpc_stc.o mtx_ops.o
-PROJ_OBJ += solver.o matrix_support.o ldl.o
+PROJ_OBJ += controller.o controller_pid.o controller_mellinger.o controller_indi.o
+PROJ_OBJ += controller_mpc.o position_controller_mpc.o
+PROJ_OBJ += mpc.o mpc_const.o mpc_inc.o mpc_ref.o mpc_stc.o mtx_ops.o #muaompc
+PROJ_OBJ += util.o auxil.o error.o lin_alg.o osqp.o proj.o qdldl_interface.o qdldl.o scaling.o workspace.o #osqp
 PROJ_OBJ += power_distribution_$(POWER_DISTRIBUTION).o
 PROJ_OBJ += estimator_kalman.o kalman_core.o kalman_supervisor.o
 

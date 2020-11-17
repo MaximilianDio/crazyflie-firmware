@@ -16,11 +16,17 @@
 #include "debug.h"
 
 // define which solver to use!
-#define MUAO_MPC
+#define OSQP_MPC //MUAO_MPC
 
 #ifdef MUAO_MPC
 // muAO-MPC
 #include "mpc.h"
+#endif
+
+#ifdef OSQP_MPC
+// OSQP
+#include "workspace.h"
+#include "osqp.h"
 #endif
 
 struct pidInit_s {
@@ -75,6 +81,7 @@ static struct this_s this = {
 static double u1;
 static double u2;
 
+#ifdef MUAO_MPC
 static real_t x_ref[MPC_HOR_STATES] = { 0 };
 
 // define reference trajectory
@@ -83,13 +90,13 @@ void createXRef(const setpoint_t *setpoint, const state_t *state) {
 //	// transform to body frame
 //	float cosyaw = cosf(state->attitude.yaw * (float) M_PI / 180.0f);
 //	float sinyaw = sinf(state->attitude.yaw * (float) M_PI / 180.0f);
-	float bodyvx = setpoint->velocity.x;
-	float bodyvy = setpoint->velocity.y;
+//	float bodyvx = setpoint->velocity.x;
+//	float bodyvy = setpoint->velocity.y;
 
 	// initialize first command
-	x_ref[0] = (real_t) bodyvx;  //(bodyvx * cosyaw - bodyvy * sinyaw);
+	x_ref[0] = (real_t) setpoint->velocity.x;  //(bodyvx * cosyaw - bodyvy * sinyaw);
 	x_ref[1] = (real_t) state->position.x;
-	x_ref[2] = (real_t) bodyvy;  //(bodyvy * cosyaw + bodyvx * sinyaw);
+	x_ref[2] = (real_t) setpoint->velocity.y;  //(bodyvy * cosyaw + bodyvx * sinyaw);
 	x_ref[3] = (real_t) state->position.y;
 
 	double decraeseValue = 0.95;
@@ -108,6 +115,7 @@ void createXRef(const setpoint_t *setpoint, const state_t *state) {
 	}
 
 }
+#endif
 
 // initialize controller
 void positionControllerMPCInit() {
@@ -182,6 +190,15 @@ void velocityControllerMPC(float* thrust, attitude_t *attitude,
 
 	u1 = (double) ctl.u_opt[0];
 	u2 = (double) ctl.u_opt[1];
+
+#endif
+
+#ifdef OSQP_MPC
+	// Solve Problem
+	osqp_solve(&workspace);
+
+	consolePrintf("- OSQP: %s\n", (&workspace)->info->status);
+	consolePrintf("- OSQP: %d\n", (int)((&workspace)->info->iter));
 
 #endif
 
