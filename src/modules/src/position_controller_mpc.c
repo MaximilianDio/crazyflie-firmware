@@ -16,7 +16,7 @@
 #include "debug.h"
 
 // define which solver to use!
-#define OSQP_MPC //MUAO_MPC
+#define MUAO_MPC //MUAO_MPC
 
 #ifdef MUAO_MPC
 // muAO-MPC
@@ -87,19 +87,21 @@ static real_t x_ref[MPC_HOR_STATES] = { 0 };
 // define reference trajectory
 void createXRef(const setpoint_t *setpoint, const state_t *state) {
 	// TODO
+
+	float speedCoefficient = 3.0;
 //	// transform to body frame
-//	float cosyaw = cosf(state->attitude.yaw * (float) M_PI / 180.0f);
-//	float sinyaw = sinf(state->attitude.yaw * (float) M_PI / 180.0f);
-//	float bodyvx = setpoint->velocity.x;
-//	float bodyvy = setpoint->velocity.y;
+	float cosyaw = cosf(state->attitude.yaw * (float) M_PI / 180.0f);
+	float sinyaw = sinf(state->attitude.yaw * (float) M_PI / 180.0f);
+	float bodyvx = speedCoefficient*setpoint->velocity.x;
+	float bodyvy = speedCoefficient*setpoint->velocity.y;
 
 	// initialize first command
-	x_ref[0] = (real_t) setpoint->velocity.x;  //(bodyvx * cosyaw - bodyvy * sinyaw);
+	x_ref[0] = (real_t) (bodyvx * cosyaw - bodyvy * sinyaw);
 	x_ref[1] = (real_t) state->position.x;
-	x_ref[2] = (real_t) setpoint->velocity.y;  //(bodyvy * cosyaw + bodyvx * sinyaw);
+	x_ref[2] = (real_t) (bodyvy * cosyaw + bodyvx * sinyaw);
 	x_ref[3] = (real_t) state->position.y;
 
-	double decraeseValue = 0.95;
+	double decraeseValue = 1.0;
 
 	for (int i = 1; i < MPC_HOR; i++) {
 		// dampen the velocity
@@ -237,3 +239,7 @@ void positionControllerMPCResetAll() {
 	pidReset(&this.pidVZ.pid);
 }
 
+LOG_GROUP_START(posMPC)
+LOG_ADD(LOG_FLOAT, u1, &u1)
+LOG_ADD(LOG_FLOAT, u2, &u2)
+LOG_GROUP_STOP(posMPC)
