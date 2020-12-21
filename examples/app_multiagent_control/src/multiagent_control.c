@@ -63,10 +63,10 @@ void appMain()
 {
   DEBUG_PRINT("Waiting for activation ...\n");
 
-    // Initialize the p2p packet 
+    // Initialize the p2p packet
     static P2PPacket p_reply;
     p_reply.port=0x00;
-    
+
     // Get the current address of the crazyflie and obtain
     //   the last two digits and send it as the first byte
     //   of the payload
@@ -78,7 +78,7 @@ void appMain()
     char *str="Hello World";
     memcpy(&p_reply.data[1], str, sizeof(char)*MESSAGE_LENGHT);
 
-    // Set the size, which is the amount of bytes the payload with ID and the string 
+    // Set the size, which is the amount of bytes the payload with ID and the string
     p_reply.size=sizeof(char)*MESSAGE_LENGHT+1;
 
     // Register the callback function so that the CF can receive packets as well.
@@ -86,7 +86,7 @@ void appMain()
 
   while(1) {
     // Send a message every 2 seconds
-    //   Note: if they are sending at the exact same time, there will be message collisions, 
+    //   Note: if they are sending at the exact same time, there will be message collisions,
     //    however since they are sending every 2 seconds, and they are not started up at the same
     //    time and their internal clocks are different, there is not really something to worry about
 

@@ -16,11 +16,12 @@
 #include "debug.h"
 
 // define which solver to use!
-#define MUAO_MPC //MUAO_MPC
+#define MUAO_MPC // MUAO_MPC or OSQP_MPC
 
 #ifdef MUAO_MPC
 // muAO-MPC
 #include "mpc.h"
+
 #endif
 
 #ifdef OSQP_MPC
@@ -63,6 +64,13 @@ static float zVelMax = 1.0f;
 static float velMaxOverhead = 1.10f;
 static const float thrustScale = 1000.0f;
 
+// for logging
+static float xVelRef = 0.0;
+static float yVelRef = 0.0;
+static float xVel = 0.0;
+static float yVel = 0.0;
+static float zPos = 0.0;
+
 #define DT (float)(1.0f/POSITION_RATE)
 #define POSITION_LPF_CUTOFF_FREQ 20.0f
 #define POSITION_LPF_ENABLE true
@@ -88,32 +96,47 @@ static real_t x_ref[MPC_HOR_STATES] = { 0 };
 void createXRef(const setpoint_t *setpoint, const state_t *state) {
 	// TODO
 
-	float speedCoefficient = 3.0;
+	float speedCoefficient = 1.0;
 //	// transform to body frame
 	float cosyaw = cosf(state->attitude.yaw * (float) M_PI / 180.0f);
 	float sinyaw = sinf(state->attitude.yaw * (float) M_PI / 180.0f);
-	float bodyvx = speedCoefficient*setpoint->velocity.x;
-	float bodyvy = speedCoefficient*setpoint->velocity.y;
+	float bodyvx = speedCoefficient * setpoint->velocity.x;
+	float bodyvy = speedCoefficient * setpoint->velocity.y;
+
+	// transform reference velocity to body frame
+	xVelRef = (bodyvx * cosyaw - bodyvy * sinyaw);
+	yVelRef = (bodyvy * cosyaw + bodyvx * sinyaw);
 
 	// initialize first command
-	x_ref[0] = (real_t) (bodyvx * cosyaw - bodyvy * sinyaw);
-	x_ref[1] = (real_t) state->position.x;
-	x_ref[2] = (real_t) (bodyvy * cosyaw + bodyvx * sinyaw);
-	x_ref[3] = (real_t) state->position.y;
+	x_ref[0] = (real_t) 0.0; // pos_x
+	x_ref[1] = (real_t) 0.0; // pos_y
+	x_ref[2] = (real_t) xVelRef; // vel_x
+	x_ref[3] = (real_t) yVelRef; // vel_y
 
-	double decraeseValue = 1.0;
+//	for (int i = 0; i < 3; i++) {
+//		consolePrintf("x[%i] = %f \n", i, (double ) x_ref[i]);
+//	}
+
+	double decreaseValue = 1.0;
 
 	for (int i = 1; i < MPC_HOR; i++) {
-		// dampen the velocity
-		x_ref[i * MPC_STATES] = (real_t) x_ref[(i - 1) * MPC_STATES]
-				* decraeseValue; // vel_x
+		// velocity
+		// dampened by decrease_value
 		x_ref[i * MPC_STATES + 2] = (real_t) x_ref[(i - 1) * MPC_STATES + 2]
-				* decraeseValue; // vel_y
+				* decreaseValue; // vel_x
+		x_ref[i * MPC_STATES + 3] = (real_t) x_ref[(i - 1) * MPC_STATES + 3]
+				* decreaseValue; // vel_y
+
 		// integrate over the velocity
+		// pos(new) = pos(old) + dt/2*(vel(old)+vel(new))
+		x_ref[i * MPC_STATES + 0] = x_ref[(i - 1) * MPC_STATES + 0]
+				+ ((real_t) DT ) / 2
+						* (x_ref[(i - 1) * MPC_STATES + 2]
+								+ x_ref[i * MPC_STATES + 2]); // pos_x
 		x_ref[i * MPC_STATES + 1] = x_ref[(i - 1) * MPC_STATES + 1]
-				+ ((real_t) DT ) * x_ref[(i - 1) * MPC_STATES]; // pos_x
-		x_ref[i * MPC_STATES + 3] = x_ref[(i - 1) * MPC_STATES + 3]
-				+ ((real_t) DT ) * x_ref[(i - 1) * MPC_STATES + 2]; // pos_y
+				+ ((real_t) DT ) / 2
+						* (x_ref[(i - 1) * MPC_STATES + 3]
+								+ x_ref[i * MPC_STATES + 3]); // pos_y
 	}
 
 }
@@ -131,6 +154,7 @@ void positionControllerMPCInit() {
 
 	u1 = 0.0;
 	u2 = 0.0;
+
 }
 
 static float runPid(float input, struct pidAxis_s *axis, float setpoint,
@@ -165,31 +189,36 @@ void velocityControllerMPC(float* thrust, attitude_t *attitude,
 	this.pidVZ.pid.outputLimit = (UINT16_MAX / 2 / thrustScale);
 	//this.pidVZ.pid.outputLimit = (this.thrustBase - this.thrustMin) / thrustScale;
 
-	// TODO
 #ifdef MUAO_MPC
 	// muAO-MPC
 
 	real_t x[MPC_STATES]; /* current state of the system */
 	extern struct mpc_ctl ctl; /* already defined */
 	ctl.conf->in_iter = 10; /* number of iterations */
+//	ctl.conf->warmstart = 1;
 
 	createXRef(setpoint, state);
 
 	ctl.x_ref = x_ref;
 
+	// logging
+	xVel = state->velocity.x;
+	yVel = state->velocity.y;
+	zPos = state->position.z;
+
 	/* The current state */
-	x[0] = state->velocity.x;
-	x[1] = state->position.x;
-	x[2] = state->velocity.y;
-	x[3] = state->position.y;
+	x[0] = 0.0;
+	x[1] = 0.0;
+	x[2] = xVel;
+	x[3] = yVel;
 
-//	for (int i = 0; i < MPC_STATES; i++) {
-//		consolePrintf("x[%i] = %f \n", i, (double ) x[i]);
-//	}
+	//	for (int i = 0; i < MPC_STATES; i++) {
+	//		consolePrintf("x[%i] = %f \n", i, (double ) x[i]);
+	//	}
 
-	/* Solve MPC problem and print the first element of input sequence */
 	mpc_ctl_solve_problem(&ctl, x); /* solve the MPC problem */
 
+	// use only first input
 	u1 = (double) ctl.u_opt[0];
 	u2 = (double) ctl.u_opt[1];
 
@@ -198,9 +227,6 @@ void velocityControllerMPC(float* thrust, attitude_t *attitude,
 #ifdef OSQP_MPC
 	// Solve Problem
 	osqp_solve(&workspace);
-
-	consolePrintf("- OSQP: %s\n", (&workspace)->info->status);
-	consolePrintf("- OSQP: %d\n", (int)((&workspace)->info->iter));
 
 #endif
 
@@ -240,6 +266,11 @@ void positionControllerMPCResetAll() {
 }
 
 LOG_GROUP_START(posMPC)
-LOG_ADD(LOG_FLOAT, u1, &u1)
-LOG_ADD(LOG_FLOAT, u2, &u2)
+LOG_ADD(LOG_FLOAT, input_1, &u1)
+LOG_ADD(LOG_FLOAT, input_2, &u2)
+LOG_ADD(LOG_FLOAT, x_ref_vel, &xVelRef )
+LOG_ADD(LOG_FLOAT, y_ref_vel, &yVelRef )
+LOG_ADD(LOG_FLOAT, x_vel, &xVel )
+LOG_ADD(LOG_FLOAT, y_vel, &yVel )
+LOG_ADD(LOG_FLOAT, z_pos, &zPos )
 LOG_GROUP_STOP(posMPC)

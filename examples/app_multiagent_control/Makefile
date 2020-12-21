@@ -4,7 +4,7 @@ APP=1
 APP_STACKSIZE=300
 
 VPATH += src/
-PROJ_OBJ += peer_to_peer.o
+PROJ_OBJ += multiagent_control.o
 
 CRAZYFLIE_BASE=../..
 include $(CRAZYFLIE_BASE)/Makefile
