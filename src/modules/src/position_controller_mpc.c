@@ -96,7 +96,7 @@ static real_t x_ref[MPC_HOR_STATES] = { 0 };
 void createXRef(const setpoint_t *setpoint, const state_t *state) {
 	// TODO
 
-	float speedCoefficient = 1.0;
+	float speedCoefficient = 0.5;
 //	// transform to body frame
 	float cosyaw = cosf(state->attitude.yaw * (float) M_PI / 180.0f);
 	float sinyaw = sinf(state->attitude.yaw * (float) M_PI / 180.0f);

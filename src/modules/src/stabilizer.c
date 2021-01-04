@@ -191,7 +191,7 @@ void stabilizerInit(StateEstimatorType estimator)
 
   sensorsInit();
   stateEstimatorInit(estimator);
-  controllerInit(ControllerTypeMPC);
+  controllerInit(ControllerTypeMPC); // CHANGE HERE
   powerDistributionInit();
   sitAwInit();
   estimatorType = getStateEstimator();
