@@ -5,25 +5,25 @@
  *      Author: maximilian
  */
 
-#ifndef SRC_MODULES_INTERFACE_POSITION_CONTROLLER_MPC_H_
-#define SRC_MODULES_INTERFACE_POSITION_CONTROLLER_MPC_H_
+#ifndef SRC_MODULES_INTERFACE_VERTICAL_CONTROLLER_PID_H_
+#define SRC_MODULES_INTERFACE_VERTICAL_CONTROLLER_PID_H_
 
 #include "stabilizer_types.h"
 
 // calculates optimal thrust, roll, pitch based on model predictive control approach to reach 3D position setpoint
 
 // initialize controller
-void positionControllerMPCInit();
+void verticalControllerPIDInit();
 
 // resets control input
-void positionControllerMPCResetAll();
+void verticalControllerPIDResetAll();
 
 // calculates desired thrust, roll, pitch to approach a 3D position setpoint
-void positionControllerMPC(float* thrust, attitude_t *attitude,
+void verticalControllerPID(float* thrust, attitude_t *attitude,
 		setpoint_t *setpoint, const state_t *state);
 
-void velocityControllerMPC(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
+void verticalVelocityControllerPID(float* thrust, attitude_t *attitude, setpoint_t *setpoint,
                                                              const state_t *state);
 
 
-#endif /* SRC_MODULES_INTERFACE_POSITION_CONTROLLER_MPC_H_ */
+#endif /* SRC_MODULES_INTERFACE_VERTICAL_CONTROLLER_PID_H_ */

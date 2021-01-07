@@ -2,10 +2,11 @@
 #include "stabilizer_types.h"
 
 #include "attitude_controller.h"
-#include "position_controller_mpc.h"
 #include "sensfusion6.h"
 #include "controller_mpc.h"
 
+#include "vertical_controller_pid.h"
+#include "horizontal_controller_mpc.h"
 #include "log.h"
 #include "param.h"
 #include "math3d.h"
@@ -37,7 +38,9 @@ void controllerMPCInit(void) {
 
 	attitudeControllerInit(ATTITUDE_UPDATE_DT);
 
-	positionControllerMPCInit();
+	verticalControllerPIDInit();
+
+	horizontalControllerMPCInit();
 
 	DEBUG_PRINT("MPC initialized!\n");
 }
@@ -84,11 +87,19 @@ void controllerMPC(control_t *control, setpoint_t *setpoint,
 		attitudeDesired.yaw = capAngle(attitudeDesired.yaw);
 	}
 
+	// vertical position (PID)
 	if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
-		positionControllerMPC(&actuatorThrust, &attitudeDesired, setpoint,
+		verticalControllerPID(&actuatorThrust, &attitudeDesired, setpoint,
 				state);
 	}
 
+	// horizontal velocity (MPC)
+	if (RATE_DO_EXECUTE(MPC_RATE, tick)) {
+			horizontalControllerMPC(&actuatorThrust, &attitudeDesired, setpoint,
+					state);
+		}
+
+	// run attitude controller based on MPC attitude setpoints
 	if (RATE_DO_EXECUTE(ATTITUDE_RATE, tick)) {
 		// Switch between manual and automatic position control
 		if (setpoint->mode.z == modeDisable) {
