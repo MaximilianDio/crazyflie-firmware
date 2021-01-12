@@ -174,6 +174,7 @@ void controllerMPC(control_t *control, setpoint_t *setpoint,
 		cmd_yaw = control->yaw;
 
 		attitudeControllerResetAllPID();
+		horizontalControllerMPCResetAll();
 
 		// Reset the calculated YAW angle for rate control
 		attitudeDesired.yaw = state->attitude.yaw;

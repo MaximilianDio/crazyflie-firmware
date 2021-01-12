@@ -41,7 +41,7 @@ static real_t x_ref[MPC_HOR_STATES] = { 0 };
 void createXRef(const setpoint_t *setpoint, const state_t *state) {
 	// TODO - change reference trajectory based on MAC forward simulation
 
-	float speedCoefficient = 2;
+	float speedCoefficient = 1;
 
     // transform to body frame
 	float cosyaw = cosf(state->attitude.yaw * (float) M_PI / 180.0f);
@@ -78,8 +78,8 @@ void createXRef(const setpoint_t *setpoint, const state_t *state) {
 	}
 
 	// update integral action reference
-//	xIntRef += DT * xVelRef;
-//	yIntRef += DT * yVelRef;
+	xIntRef += DT * xVelRef;
+	yIntRef += DT * yVelRef;
 
 }
 
@@ -90,8 +90,14 @@ void horizontalControllerMPCInit() {
 }
 
 void horizontalControllerMPCResetAll() {
+	// FIXME
 	u1 = 0.0;
 	u2 = 0.0;
+
+	xInt = 0.0;
+	yInt = 0.0;
+	xIntRef = 0.0;
+	yIntRef = 0.0;
 }
 
 void horizontalControllerMPC(float* thrust, attitude_t *attitude,
@@ -119,8 +125,8 @@ void horizontalVelocityControllerMPC(float* thrust, attitude_t *attitude,
 	yVel = state->velocity.y;
 
 	// update integral action states
-//	xInt += DT * xVel;
-//	yInt += DT * yVel;
+	xInt += DT * xVel;
+	yInt += DT * yVel;
 
 	/* The current state */
 	x[0] = xInt;
